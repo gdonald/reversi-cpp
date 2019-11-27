@@ -25,7 +25,7 @@ Game::Game(const char *title) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
   bgSurface = SDL_LoadBMP("res/img/bg.bmp");
-  if (bgSurface == NULL) {
+  if (bgSurface == nullptr) {
     printf("Unable to load image %s! SDL Error: %s\n", "res/img/bg.bmp", SDL_GetError());
     exit(EXIT_FAILURE);
   }
@@ -67,7 +67,7 @@ void Game::clean() {
 
 void Game::render() {
   SDL_RenderClear(renderer);
-  SDL_RenderCopy(renderer, bgTexture, NULL, NULL);
+  SDL_RenderCopy(renderer, bgTexture, nullptr, nullptr);
 
   drawGrid();
   drawDiscs();
@@ -87,8 +87,8 @@ void Game::drawDisc(Sint16 col, Sint16 row, char *color) {
 void Game::drawDiscs() {
   for (Sint16 r = 0; r < SIZE; r++)
     for (Sint16 c = 0; c < SIZE; c++)
-      if (strcmp(board[r][c], empty) != 0)
-        drawDisc(c, r, board[r][c]);
+      if (strcmp(board->moves[r][c], empty) != 0)
+        drawDisc(c, r, board->moves[r][c]);
 }
 
 void Game::drawGrid() {
@@ -111,15 +111,17 @@ void Game::drawGrid() {
 }
 
 void Game::newGame() {
-  for (auto &r : board)
+  board = new Board();
+
+  for (auto &r : board->moves)
     for (auto &c : r)
       c = const_cast<char *>(empty);
 
   int m = SIZE / 2;
-  board[m - 1][m - 1] = const_cast<char *>(light);
-  board[m - 1][m] = const_cast<char *>(dark);
-  board[m][m] = const_cast<char *>(light);
-  board[m][m - 1] = const_cast<char *>(dark);
+  board->moves[m - 1][m - 1] = const_cast<char *>(light);
+  board->moves[m - 1][m] = const_cast<char *>(dark);
+  board->moves[m][m] = const_cast<char *>(light);
+  board->moves[m][m - 1] = const_cast<char *>(dark);
 
   turn = const_cast<char *>(dark);
   player = const_cast<char *>(dark);
@@ -160,7 +162,7 @@ bool Game::legalMove(char *who, int col, int row) {
   int x, y;
   char *op = const_cast<char *>(!strcmp(who, dark) ? light : dark);
 
-  if (strcmp(board[row][col], empty) != 0)
+  if (strcmp(board->moves[row][col], empty) != 0)
     return false;
 
   for (int n = 0; n < 8; n++) {
@@ -170,12 +172,12 @@ bool Game::legalMove(char *who, int col, int row) {
     if (y < 0 || x < 0 || y >= SIZE || x >= SIZE)
       continue;
 
-    if (board[y][x] == op) {
+    if (board->moves[y][x] == op) {
       y += neighbors[n][0];
       x += neighbors[n][1];
 
       while (y >= 0 && x >= 0 && y < SIZE && x < SIZE) {
-        if (board[y][x] == turn) {
+        if (board->moves[y][x] == turn) {
           return true;
         }
 
@@ -216,7 +218,7 @@ int Game::countEmpty() {
 
   for (int r = 0; r < SIZE; r++)
     for (int c = 0; c < SIZE; c++)
-      if (!strcmp(board[r][c], empty))
+      if (!strcmp(board->moves[r][c], empty))
         total++;
 
   return total;
@@ -240,7 +242,7 @@ void Game::flipPieces(char *color, int col, int row) {
   int x, y, fx, fy;
   char *op = const_cast<char *>(!strcmp(color, dark) ? light : dark);
 
-  board[row][col] = color;
+  board->moves[row][col] = color;
 
   for (int n = 0; n < 8; n++) {
     y = row + neighbors[n][0];
@@ -249,19 +251,19 @@ void Game::flipPieces(char *color, int col, int row) {
     if (y < 0 || x < 0 || y >= SIZE || x >= SIZE)
       continue;
 
-    if (board[y][x] == op) {
+    if (board->moves[y][x] == op) {
       y += neighbors[n][0];
       x += neighbors[n][1];
 
       while (y >= 0 && x >= 0 && y < SIZE && x < SIZE) {
-        if (board[y][x] == color) {
+        if (board->moves[y][x] == color) {
           fy = row;
           fx = col;
 
           for (;;) {
             fy += neighbors[n][0];
             fx += neighbors[n][1];
-            board[fy][fx] = color;
+            board->moves[fy][fx] = color;
 
             if (fy == y && fx == x)
               break;

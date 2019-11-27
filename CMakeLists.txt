@@ -18,6 +18,7 @@ include_directories(include
         ${SDL2_TTF_INCLUDE_DIRS})
 
 add_executable(reversi
+        src/Board.cpp
         src/Game.cpp
         src/main.cpp)
 

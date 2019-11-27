@@ -4,7 +4,8 @@
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
 
-#define SIZE      8
+#include "Board.h"
+
 #define SCREEN_W  800
 #define SCREEN_H  602
 #define BOARD_HW  600
@@ -81,7 +82,7 @@ private:
   SDL_Renderer *renderer{};
   SDL_Surface *bgSurface;
   SDL_Texture *bgTexture;
-  char *board[SIZE][SIZE]{};
+  Board *board{};
 
   char const *empty = "-";
   char const *dark = "x";
