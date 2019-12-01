@@ -1,6 +1,7 @@
 #include "Game.h"
 
 int main(int argc, char *args[]) {
+  std::srand(unsigned(std::time(nullptr)));
 
   Game *game = new Game("Reversi");
 

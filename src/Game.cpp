@@ -1,3 +1,4 @@
+
 #include "Game.h"
 
 Game::Game(const char *title) {
@@ -71,24 +72,45 @@ void Game::render() {
 
   drawGrid();
   drawDiscs();
+  drawLegalMoves();
 
   SDL_RenderPresent(renderer);
   SDL_Delay(30);
 }
 
-void Game::drawDisc(Sint16 col, Sint16 row, char *color) {
+void Game::drawDisc(Sint16 col, Sint16 row, int color) {
   Sint16 x = (DISC * col) + RADIUS + 3;
   Sint16 y = (DISC * row) + RADIUS + 3;
-  Uint8 c = !strcmp(color, dark) ? 0x00 : 0xFF;
+  Uint8 c = color == DARK ? 0x00 : 0xFF;
 
   filledCircleRGBA(renderer, x, y, RADIUS, c, c, c, 0xff);
 }
 
 void Game::drawDiscs() {
-  for (Sint16 r = 0; r < SIZE; r++)
-    for (Sint16 c = 0; c < SIZE; c++)
-      if (strcmp(board->moves[r][c], empty) != 0)
-        drawDisc(c, r, board->moves[r][c]);
+  for (Sint16 r = 0; r < SIZE; r++) {
+    for (Sint16 c = 0; c < SIZE; c++) {
+      int color = board->getColor(c, r);
+      if (color != EMPTY) {
+        drawDisc(c, r, color);
+      }
+    }
+  }
+}
+
+void Game::drawLegalMoves() {
+  auto moves = board->legalMoves(turn);
+
+  for(auto & move: moves) {
+    drawLegalMove(move.col, move.row);
+  }
+}
+
+void Game::drawLegalMove(Sint16 col, Sint16 row) {
+  Sint16 x = (DISC * col) + RADIUS + 3;
+  Sint16 y = (DISC * row) + RADIUS + 3;
+
+  filledCircleRGBA(renderer, x + 1, y + 1, 3, 0x00, 0xff, 0x00, 0xff);
+  filledCircleRGBA(renderer, x + 1, y + 1, 2, 0xFF, 0xFF, 0xFF, 0x88);
 }
 
 void Game::drawGrid() {
@@ -108,24 +130,26 @@ void Game::drawGrid() {
   filledCircleRGBA(renderer, DISC * 6, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
   filledCircleRGBA(renderer, DISC * 2, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
   filledCircleRGBA(renderer, DISC * 6, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
+
+  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
+
+  filledCircleRGBA(renderer, DISC * 2, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 6, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 2, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 6, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+
+  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
 }
 
 void Game::newGame() {
   board = new Board();
-
-  for (auto &r : board->moves)
-    for (auto &c : r)
-      c = const_cast<char *>(empty);
-
-  int m = SIZE / 2;
-  board->moves[m - 1][m - 1] = const_cast<char *>(light);
-  board->moves[m - 1][m] = const_cast<char *>(dark);
-  board->moves[m][m] = const_cast<char *>(light);
-  board->moves[m][m - 1] = const_cast<char *>(dark);
-
-  turn = const_cast<char *>(dark);
-  player = const_cast<char *>(dark);
-  ai = const_cast<char *>(light);
+  turn = DARK;
 }
 
 void Game::handleClick(SDL_MouseButtonEvent *event) {
@@ -136,17 +160,17 @@ void Game::handleClick(SDL_MouseButtonEvent *event) {
   int col = mouseX / DISC;
   int row = mouseY / DISC;
 
-  if (legalMove(player, col, row)) {
-    flipPieces(player, col, row);
+  if (board->legalMove(col, row, DARK)) {
+    board->flipPieces(col, row, DARK);
     switchTurn();
 
     for (;;) {
       aiTurn();
 
-      if (countLegalMoves(player) > 0)
+      if (!board->legalMoves(DARK).empty())
         break;
 
-      if (countLegalMoves(ai) == 0)
+      if (board->legalMoves(LIGHT).empty())
         break;
     }
 
@@ -155,126 +179,117 @@ void Game::handleClick(SDL_MouseButtonEvent *event) {
 }
 
 bool Game::isPlayerTurn() {
-  return turn == player;
-}
-
-bool Game::legalMove(char *who, int col, int row) {
-  int x, y;
-  char *op = const_cast<char *>(!strcmp(who, dark) ? light : dark);
-
-  if (strcmp(board->moves[row][col], empty) != 0)
-    return false;
-
-  for (int n = 0; n < 8; n++) {
-    y = row + neighbors[n][0];
-    x = col + neighbors[n][1];
-
-    if (y < 0 || x < 0 || y >= SIZE || x >= SIZE)
-      continue;
-
-    if (board->moves[y][x] == op) {
-      y += neighbors[n][0];
-      x += neighbors[n][1];
-
-      while (y >= 0 && x >= 0 && y < SIZE && x < SIZE) {
-        if (board->moves[y][x] == turn) {
-          return true;
-        }
-
-        y += neighbors[n][0];
-        x += neighbors[n][1];
-      }
-    }
-  }
-
-  return false;
+  return turn == DARK;
 }
 
 void Game::switchTurn() {
-  char *op = const_cast<char *>(!strcmp(player, dark) ? light : dark);
-
-  if (!isPlayerTurn() && countLegalMoves(player) > 0) {
-    turn = player;
-  } else if (isPlayerTurn() && countLegalMoves(op) > 0) {
-    turn = op;
+  if (!isPlayerTurn() && !board->legalMoves(DARK).empty()) {
+    turn = DARK;
+  } else if (isPlayerTurn() && !board->legalMoves(LIGHT).empty()) {
+    turn = LIGHT;
   } else {
     // TODO: game over
   }
-}
-
-int Game::countLegalMoves(char *who) {
-  int moves = 0;
-
-  for (int r = 0; r < SIZE; r++)
-    for (int c = 0; c < SIZE; c++)
-      if (legalMove(who, c, r))
-        moves++;
-
-  return moves;
-}
-
-int Game::countEmpty() {
-  int total = 0;
-
-  for (int r = 0; r < SIZE; r++)
-    for (int c = 0; c < SIZE; c++)
-      if (!strcmp(board->moves[r][c], empty))
-        total++;
-
-  return total;
 }
 
 void Game::aiTurn() {
   if (isPlayerTurn())
     return;
 
-  char *color = const_cast<char *>(!strcmp(player, dark) ? light : dark);
+  Move m = getAiMove();
 
-  for (int r = 0; r < SIZE; r++)
-    for (int c = 0; c < SIZE; c++)
-      if (legalMove(color, c, r)) {
-        flipPieces(color, c, r);
-        return;
-      }
+  if (m.col > -1 && m.row > -1) {
+    board->flipPieces(m.col, m.row, LIGHT);
+  }
 }
 
-void Game::flipPieces(char *color, int col, int row) {
-  int x, y, fx, fy;
-  char *op = const_cast<char *>(!strcmp(color, dark) ? light : dark);
+int Game::evaluate(Board *board, int color) {
+  int colorScore = board->getMovesScore(color);
+  int otherColorScore = board->getMovesScore(otherColor(color));
+  int finalColorScore = colorScore - otherColorScore;
 
-  board->moves[row][col] = color;
+  int mobilityScore = board->legalMoves(color).size();
+  int otherMobilityScore = board->legalMoves(otherColor(color)).size();
+  int finalMobilityScore = mobilityScore - otherMobilityScore;
 
-  for (int n = 0; n < 8; n++) {
-    y = row + neighbors[n][0];
-    x = col + neighbors[n][1];
+  return (colorScoreWeight(board) * finalColorScore) + (mobilityScoreWeight(board) * finalMobilityScore);
+}
 
-    if (y < 0 || x < 0 || y >= SIZE || x >= SIZE)
-      continue;
+int Game::otherColor(int color) {
+  return color == DARK ? LIGHT : DARK;
+}
 
-    if (board->moves[y][x] == op) {
-      y += neighbors[n][0];
-      x += neighbors[n][1];
+Move Game::getAiMove() {
+  auto moves = board->legalMoves(LIGHT);
+  int eval;
+  int maxEval = std::numeric_limits<int>::min();
+  Move bestMove = Move(-1, -1);
 
-      while (y >= 0 && x >= 0 && y < SIZE && x < SIZE) {
-        if (board->moves[y][x] == color) {
-          fy = row;
-          fx = col;
-
-          for (;;) {
-            fy += neighbors[n][0];
-            fx += neighbors[n][1];
-            board->moves[fy][fx] = color;
-
-            if (fy == y && fx == x)
-              break;
-          }
-
-          break;
-        }
-
-        y += neighbors[n][0];
-        x += neighbors[n][1];
-      }
+  for(auto &move : moves) {
+    auto childBoard = Board(*board);
+    childBoard.addMove(move, LIGHT);
+    eval = minimax(&childBoard, 5, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), false);
+    if (eval > maxEval) {
+      maxEval = eval;
+      bestMove = move;
     }
   }
+
+  return bestMove;
+}
+
+int Game::minimax(Board *board, int depth, int alpha, int beta, bool maximizingPlayer) {
+
+  if (depth == 0 || board->legalMoves(LIGHT).empty()) {
+    return evaluate(board, LIGHT);
+  }
+
+  int eval;
+
+  if (maximizingPlayer) {
+    int maxEval = std::numeric_limits<int>::min();
+
+    for (auto &move : board->legalMoves(LIGHT)) {
+      auto childBoard = Board(*board);
+      childBoard.addMove(move, LIGHT);
+      eval = minimax(&childBoard, depth - 1, alpha, beta, false);
+      maxEval = std::max(maxEval, eval);
+      alpha = std::max(alpha, eval);
+      if (beta <= alpha)
+        break;
+    }
+
+    return maxEval;
+
+  } else {
+    int minEval = std::numeric_limits<int>::max();
+
+    for (auto &move : board->legalMoves(DARK)) {
+      auto childBoard = Board(*board);
+      childBoard.addMove(move, DARK);
+      eval = minimax(&childBoard, depth - 1, alpha, beta, true);
+      minEval = std::min(minEval, eval);
+      beta = std::min(beta, eval);
+      if (beta <= alpha)
+        break;
+    }
+
+    return minEval;
+  }
+}
+
+bool Game::gameOver() {
+  return board->legalMoves(DARK).empty() && board->legalMoves(LIGHT).empty();
+}
+
+int Game::colorScoreWeight(Board *board) {
+  int totalMoves = board->totalMoves();
+  if (totalMoves == 0) { return 1; }
+  return 540 / totalMoves;
+}
+
+int Game::mobilityScoreWeight(Board *board) {
+  int totalMoves = board->totalMoves();
+  if (totalMoves == 0) { return 1; }
+  return totalMoves / 2;
 }
