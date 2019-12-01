@@ -5,15 +5,19 @@
 #include <iostream>
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
+#include <SDL_ttf.h>
 
 #include "Board.h"
 #include "Move.h"
 
-#define SCREEN_W  800
-#define SCREEN_H  602
+#define SCREEN_W  626
+#define SCREEN_H 626
 #define BOARD_HW  600
+#define LABEL 24
 #define DISC      (BOARD_HW / SIZE)
 #define RADIUS    ((DISC / 2) - 2)
+
+#define FONT "res/font/LiberationSerif-Bold.ttf"
 
 class Game {
 public:
@@ -59,7 +63,7 @@ public:
 
   Move getAiMove();
 
-  bool gameOver();
+  void write_text(const char *text, int x, int y);
 
 private:
   bool running = false;
@@ -73,6 +77,8 @@ private:
   int mouseY{};
 
   int turn{};
+
+  TTF_Font *font;
 };
 
 #endif
