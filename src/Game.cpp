@@ -34,6 +34,17 @@ Game::Game(const char *title) {
   bgTexture = SDL_CreateTextureFromSurface(renderer, bgSurface);
   SDL_FreeSurface(bgSurface);
 
+  if (TTF_Init() == -1) {
+    printf("TTF_Init failed: %s\n", TTF_GetError());
+    exit(EXIT_FAILURE);
+  }
+
+  font = TTF_OpenFont(FONT, 15);
+  if (font == nullptr) {
+    printf("Failed to load font! Error: %s\n", TTF_GetError());
+    exit(EXIT_FAILURE);
+  }
+
   newGame();
 
   running = true;
@@ -83,7 +94,7 @@ void Game::drawDisc(Sint16 col, Sint16 row, int color) {
   Sint16 y = (DISC * row) + RADIUS + 3;
   Uint8 c = color == DARK ? 0x00 : 0xFF;
 
-  filledCircleRGBA(renderer, x, y, RADIUS, c, c, c, 0xff);
+  filledCircleRGBA(renderer, LABEL + x, LABEL + y, RADIUS, c, c, c, 0xff);
 }
 
 void Game::drawDiscs() {
@@ -100,7 +111,7 @@ void Game::drawDiscs() {
 void Game::drawLegalMoves() {
   auto moves = board->legalMoves(turn);
 
-  for(auto & move: moves) {
+  for (auto &move: moves) {
     drawLegalMove(move.col, move.row);
   }
 }
@@ -109,42 +120,73 @@ void Game::drawLegalMove(Sint16 col, Sint16 row) {
   Sint16 x = (DISC * col) + RADIUS + 3;
   Sint16 y = (DISC * row) + RADIUS + 3;
 
-  filledCircleRGBA(renderer, x + 1, y + 1, 3, 0x00, 0xff, 0x00, 0xff);
-  filledCircleRGBA(renderer, x + 1, y + 1, 2, 0xFF, 0xFF, 0xFF, 0x88);
+  filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 5, 0x00, 0x00, 0xaa, 0xaa);
+  filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 2, 0xFF, 0xFF, 0xFF, 0xaa);
 }
 
 void Game::drawGrid() {
-  SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+  int lb = LABEL + BOARD_HW;
 
-  for (int x = 0; x <= BOARD_HW; x += BOARD_HW / SIZE) {
-    SDL_RenderDrawLine(renderer, x, 0, x, BOARD_HW);
-    SDL_RenderDrawLine(renderer, x + 1, 0, x + 1, BOARD_HW);
+  SDL_SetRenderDrawColor(renderer, 0x65, 0x43, 0x21, 0xff);
+
+  SDL_Rect rect;
+  rect.x = 0;
+  rect.y = 0;
+  rect.h = LABEL;
+  rect.w = LABEL + BOARD_HW;
+  SDL_RenderFillRect(renderer, &rect);
+
+  rect.x = 0;
+  rect.y = 0;
+  rect.h = LABEL + BOARD_HW;
+  rect.w = LABEL;
+  SDL_RenderFillRect(renderer, &rect);
+
+  // letters
+  for (int x = 0; x < 8; x++) {
+    char a[2] = {static_cast<char>(x + 97), '\0'};
+    write_text(reinterpret_cast<const char *>(&a), x * DISC + LABEL + RADIUS + 1, 2);
   }
 
-  for (int y = 0; y <= BOARD_HW; y += BOARD_HW / SIZE) {
-    SDL_RenderDrawLine(renderer, 0, y, BOARD_HW, y);
-    SDL_RenderDrawLine(renderer, 0, y + 1, BOARD_HW, y + 1);
+  // numbers
+  for (int x = 0; x < 8; x++) {
+    char a[2] = {static_cast<char>(x + 49), '\0'};
+    write_text(reinterpret_cast<const char *>(&a), 8, x * DISC + LABEL + RADIUS - 7);
   }
 
-  filledCircleRGBA(renderer, DISC * 2, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 2, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
+  SDL_SetRenderDrawColor(renderer, 0x00, 0xaa, 0x00, 0xaa);
 
-  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 2, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 6, 4, 0x00, 0x00, 0x00, 0xFF);
+  // vertical lines
+  SDL_RenderDrawLine(renderer, 0, 0, 0, lb);
+  for (int x = LABEL; x <= lb; x += BOARD_HW / SIZE) {
+    SDL_RenderDrawLine(renderer, x, 0, x, lb);
+  }
 
-  filledCircleRGBA(renderer, DISC * 2, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 2, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  // horizontal lines
+  SDL_RenderDrawLine(renderer, 0, 0, lb, 0);
+  for (int y = LABEL; y <= lb; y += BOARD_HW / SIZE) {
+    SDL_RenderDrawLine(renderer, 0, y, lb, y);
+  }
 
-  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 2 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 2 + 1, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
-  filledCircleRGBA(renderer, DISC * 6 + 1, DISC * 6 + 1, 4, 0x00, 0x00, 0x00, 0xFF);
+  filledCircleRGBA(renderer, LABEL + DISC * 2, LABEL + DISC * 2, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6, LABEL + DISC * 2, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 2, LABEL + DISC * 6, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6, LABEL + DISC * 6, 4, 0x00, 0xaa, 0x00, 0xaa);
+
+  filledCircleRGBA(renderer, LABEL + DISC * 2 + 1, LABEL + DISC * 2, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6 + 1, LABEL + DISC * 2, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 2 + 1, LABEL + DISC * 6, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6 + 1, LABEL + DISC * 6, 4, 0x00, 0xaa, 0x00, 0xaa);
+
+  filledCircleRGBA(renderer, LABEL + DISC * 2, LABEL + DISC * 2 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6, LABEL + DISC * 2 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 2, LABEL + DISC * 6 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6, LABEL + DISC * 6 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+
+  filledCircleRGBA(renderer, LABEL + DISC * 2 + 1, LABEL + DISC * 2 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6 + 1, LABEL + DISC * 2 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 2 + 1, LABEL + DISC * 6 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
+  filledCircleRGBA(renderer, LABEL + DISC * 6 + 1, LABEL + DISC * 6 + 1, 4, 0x00, 0xaa, 0x00, 0xaa);
 }
 
 void Game::newGame() {
@@ -225,10 +267,10 @@ Move Game::getAiMove() {
   int maxEval = std::numeric_limits<int>::min();
   Move bestMove = Move(-1, -1);
 
-  for(auto &move : moves) {
+  for (auto &move : moves) {
     auto childBoard = Board(*board);
     childBoard.addMove(move, LIGHT);
-    eval = minimax(&childBoard, 5, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), false);
+    eval = minimax(&childBoard, 3, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), false);
     if (eval > maxEval) {
       maxEval = eval;
       bestMove = move;
@@ -278,10 +320,6 @@ int Game::minimax(Board *board, int depth, int alpha, int beta, bool maximizingP
   }
 }
 
-bool Game::gameOver() {
-  return board->legalMoves(DARK).empty() && board->legalMoves(LIGHT).empty();
-}
-
 int Game::colorScoreWeight(Board *board) {
   int totalMoves = board->totalMoves();
   if (totalMoves == 0) { return 1; }
@@ -292,4 +330,17 @@ int Game::mobilityScoreWeight(Board *board) {
   int totalMoves = board->totalMoves();
   if (totalMoves == 0) { return 1; }
   return totalMoves / 2;
+}
+
+void Game::write_text(const char *text, const int x, const int y) {
+  SDL_Color color = {255, 255, 255, 0};
+  int w, h;
+
+  SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
+  SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+  TTF_SizeText(font, text, &w, &h);
+  SDL_Rect rect = {.x = x, .y = y, .w = w, .h = h};
+
+  SDL_RenderCopy(renderer, texture, nullptr, &rect);
 }

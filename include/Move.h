@@ -4,7 +4,6 @@
 class Move {
 public:
   Move(int col, int row);
-  Move(const Move &move);
 
   int col{};
   int row{};
