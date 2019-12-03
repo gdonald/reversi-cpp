@@ -1,14 +1,32 @@
 #include <random>
 #include "Board.h"
 
-const int Board::vals[SIZE][SIZE] = {{30, 5, 5, 5, 5, 5, 5, 30},
-                                     {5,  0, 1, 1, 1, 1, 0, 5},
-                                     {5,  1, 1, 1, 1, 1, 1, 5},
-                                     {5,  1, 1, 1, 1, 1, 1, 5},
-                                     {5,  1, 1, 1, 1, 1, 1, 5},
-                                     {5,  1, 1, 1, 1, 1, 1, 5},
-                                     {5,  0, 1, 1, 1, 1, 0, 5},
-                                     {30, 5, 5, 5, 5, 5, 5, 30}};
+const int Board::earlyVals[SIZE][SIZE] = {{1000, 0, 1, 1, 1, 1, 0, 1000},
+                                          {   0, 0, 1, 1, 1, 1, 0,    0},
+                                          {   1, 1, 1, 1, 1, 1, 1,    1},
+                                          {   1, 1, 1, 1, 1, 1, 1,    1},
+                                          {   1, 1, 1, 1, 1, 1, 1,    1},
+                                          {   1, 1, 1, 1, 1, 1, 1,    1},
+                                          {   0, 0, 1, 1, 1, 1, 0,    0},
+                                          {1000, 0, 1, 1, 1, 1, 0, 1000}};
+
+const int Board::middleVals[SIZE][SIZE] = {{5000, 1, 2, 2, 2, 2, 1, 5000},
+                                           {   1, 0, 1, 1, 1, 1, 0,    1},
+                                           {   2, 1, 1, 1, 1, 1, 1,    2},
+                                           {   2, 1, 1, 1, 1, 1, 1,    2},
+                                           {   2, 1, 1, 1, 1, 1, 1,    2},
+                                           {   2, 1, 1, 1, 1, 1, 1,    2},
+                                           {   1, 0, 1, 1, 1, 1, 0,    1},
+                                           {5000, 1, 2, 2, 2, 2, 1, 5000}};
+
+const int Board::lateVals[SIZE][SIZE] = {{10000, 1, 2, 2, 2, 2, 1, 10000},
+                                         {    1, 0, 1, 1, 1, 1, 0,     1},
+                                         {    2, 1, 1, 1, 1, 1, 1,     2},
+                                         {    2, 1, 1, 1, 1, 1, 1,     2},
+                                         {    2, 1, 1, 1, 1, 1, 1,     2},
+                                         {    2, 1, 1, 1, 1, 1, 1,     2},
+                                         {    1, 0, 1, 1, 1, 1, 0,     1},
+                                         {10000, 1, 2, 2, 2, 2, 1, 10000}};
 
 const short Board::neighbors[8][2] = {{-1, -1},
                                       {-1, 0},
@@ -23,6 +41,8 @@ Board::Board() {
   for (int row = 0; row < SIZE; row++)
     for (int col = 0; col < SIZE; col++)
       moves[row][col] = EMPTY;
+  totalMoves = 0;
+  lastMove = new Move(-1, -1);
 
   int m = SIZE / 2;
   addMove(Move(m - 1, m - 1), LIGHT);
@@ -35,6 +55,8 @@ Board::Board(Board const &board) {
   for (int row = 0; row < SIZE; row++)
     for (int col = 0; col < SIZE; col++)
       moves[row][col] = board.moves[row][col];
+  totalMoves = board.totalMoves;
+  lastMove = board.lastMove;
 }
 
 void Board::flipMove(const Move &move, int color) {
@@ -53,6 +75,9 @@ void Board::addMove(const Move &move, int color) {
   }
 
   moves[move.row][move.col] = color;
+  totalMoves++;
+  lastMove->col = move.col;
+  lastMove->row = move.row;
 }
 
 void Board::flipPieces(int col, int row, int color) {
@@ -105,8 +130,19 @@ int Board::getMovesScore(int color) {
 
   for (int row = 0; row < SIZE; row++)
     for (int col = 0; col < SIZE; col++)
-      if (moves[row][col] == color)
-        total += vals[row][col];
+      if (moves[row][col] == color) {
+        switch(stage()) {
+          case EARLY:
+            total += earlyVals[row][col];
+            break;
+          case MIDDLE:
+            total += middleVals[row][col];
+            break;
+          case LATE:
+            total += lateVals[row][col];
+            break;
+        }
+      }
 
   return total;
 }
@@ -167,13 +203,8 @@ int Board::getColor(int col, int row) {
   return moves[row][col];
 }
 
-int Board::totalMoves() {
-  int total = 0;
-
-  for (int r = 0; r < SIZE; r++)
-    for (int c = 0; c < SIZE; c++)
-      if (moves[r][c] == EMPTY)
-        total++;
-
-  return total;
+int Board::stage() {
+  if (totalMoves <= 20) { return EARLY; }
+  if (totalMoves <= 40) { return MIDDLE; }
+  return LATE;
 }

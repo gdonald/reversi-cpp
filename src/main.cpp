@@ -5,9 +5,10 @@ int main(int argc, char *args[]) {
 
   Game *game = new Game("Reversi");
 
+  game->render();
+
   while (game->isRunning()) {
     game->handleEvents();
-    game->render();
   }
 
   game->clean();

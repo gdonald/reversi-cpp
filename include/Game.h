@@ -12,6 +12,8 @@
 #include "Board.h"
 #include "Move.h"
 
+#define DEPTH 7
+
 #define SCREEN_W  626
 #define SCREEN_H 626
 #define BOARD_HW  600
@@ -42,6 +44,8 @@ public:
   void drawLegalMoves();
 
   void drawLegalMove(Sint16 col, Sint16 row);
+
+  void drawLastMove();
 
   void newGame();
 

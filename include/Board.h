@@ -13,6 +13,10 @@
 #define EMPTY 0
 #define LIGHT 1
 
+#define EARLY 1
+#define MIDDLE 2
+#define LATE 3
+
 class Board {
 public:
   Board();
@@ -33,10 +37,16 @@ public:
 
   void flipPieces(int col, int row, int color);
 
-  int totalMoves();
+  int stage();
 
-  static const int vals[SIZE][SIZE];
+  static const int earlyVals[SIZE][SIZE];
+  static const int middleVals[SIZE][SIZE];
+  static const int lateVals[SIZE][SIZE];
+
   static const short neighbors[8][2];
+
+  int totalMoves;
+  Move *lastMove;
 
 private:
   int moves[SIZE][SIZE]{};
