@@ -57,7 +57,7 @@ bool Game::isRunning() {
 void Game::handleEvents() {
   SDL_Event event;
 
-  while (SDL_PollEvent(&event)) {
+  if (SDL_WaitEvent(&event)) {
     switch (event.type) {
       case SDL_QUIT:
         running = false;
@@ -120,8 +120,13 @@ void Game::drawLegalMove(Sint16 col, Sint16 row) {
   Sint16 x = (DISC * col) + RADIUS + 3;
   Sint16 y = (DISC * row) + RADIUS + 3;
 
-  filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 5, 0x00, 0x00, 0xaa, 0xaa);
-  filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 2, 0xFF, 0xFF, 0xFF, 0xaa);
+  if (isPlayerTurn()) {
+    filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 5, 0x00, 0x00, 0x00, 0xaa);
+    filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 2, 0xFF, 0xFF, 0xFF, 0xaa);
+  } else {
+    filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 5, 0xee, 0xee, 0xee, 0xaa);
+    filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 2, 0xFF, 0x00, 0x00, 0xdd);
+  }
 }
 
 void Game::drawGrid() {
@@ -145,13 +150,13 @@ void Game::drawGrid() {
   // letters
   for (int x = 0; x < 8; x++) {
     char a[2] = {static_cast<char>(x + 97), '\0'};
-    write_text(reinterpret_cast<const char *>(&a), x * DISC + LABEL + RADIUS + 1, 2);
+    writeText(reinterpret_cast<const char *>(&a), x * DISC + LABEL + RADIUS + 1, 2);
   }
 
   // numbers
   for (int x = 0; x < 8; x++) {
     char a[2] = {static_cast<char>(x + 49), '\0'};
-    write_text(reinterpret_cast<const char *>(&a), 8, x * DISC + LABEL + RADIUS - 7);
+    writeText(reinterpret_cast<const char *>(&a), 8, x * DISC + LABEL + RADIUS - 7);
   }
 
   SDL_SetRenderDrawColor(renderer, 0x00, 0xaa, 0x00, 0xaa);
@@ -205,19 +210,25 @@ void Game::handleClick(SDL_MouseButtonEvent *event) {
   if (board->legalMove(col, row, DARK)) {
     board->flipPieces(col, row, DARK);
     switchTurn();
+    render();
 
-    for (;;) {
-      aiTurn();
-
-      if (!board->legalMoves(DARK).empty())
-        break;
-
-      if (board->legalMoves(LIGHT).empty())
-        break;
-    }
-
-    switchTurn();
+    std::thread t{aiThread, this};
+    t.join();
   }
+}
+
+void Game::aiThread(Game *game) {
+  for (;;) {
+    game->aiTurn();
+
+    if (!game->board->legalMoves(DARK).empty())
+      break;
+
+    if (game->board->legalMoves(LIGHT).empty())
+      break;
+  }
+
+  game->switchTurn();
 }
 
 bool Game::isPlayerTurn() {
@@ -332,7 +343,7 @@ int Game::mobilityScoreWeight(Board *board) {
   return totalMoves / 2;
 }
 
-void Game::write_text(const char *text, const int x, const int y) {
+void Game::writeText(const char *text, const int x, const int y) {
   SDL_Color color = {255, 255, 255, 0};
   int w, h;
 

@@ -3,6 +3,8 @@
 
 #include <ctime>
 #include <iostream>
+#include <thread>
+
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
 #include <SDL_ttf.h>
@@ -63,7 +65,9 @@ public:
 
   Move getAiMove();
 
-  void write_text(const char *text, int x, int y);
+  void writeText(const char *text, int x, int y);
+
+  static void aiThread(Game *game);
 
 private:
   bool running = false;
