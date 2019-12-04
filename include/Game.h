@@ -12,7 +12,7 @@
 #include "Board.h"
 #include "Move.h"
 
-#define DEPTH 7
+#define DEPTH 3
 
 #define SCREEN_W  626
 #define SCREEN_H 626
@@ -26,6 +26,7 @@
 class Game {
 public:
   explicit Game(const char *title);
+  ~Game();
 
   bool isRunning();
 

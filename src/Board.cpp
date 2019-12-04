@@ -37,6 +37,10 @@ const short Board::neighbors[8][2] = {{-1, -1},
                                       {1,  -1},
                                       {0,  -1}};
 
+Board::~Board() {
+  delete lastMove;
+}
+
 Board::Board() {
   for (int row = 0; row < SIZE; row++)
     for (int col = 0; col < SIZE; col++)
@@ -56,7 +60,7 @@ Board::Board(Board const &board) {
     for (int col = 0; col < SIZE; col++)
       moves[row][col] = board.moves[row][col];
   totalMoves = board.totalMoves;
-  lastMove = board.lastMove;
+  lastMove = new Move(board.lastMove);
 }
 
 void Board::flipMove(const Move &move, int color) {
