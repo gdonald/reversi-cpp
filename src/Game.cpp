@@ -82,6 +82,7 @@ void Game::render() {
   SDL_RenderCopy(renderer, bgTexture, nullptr, nullptr);
 
   drawGrid();
+  drawLastMove();
   drawDiscs();
   drawLegalMoves();
 
@@ -127,6 +128,20 @@ void Game::drawLegalMove(Sint16 col, Sint16 row) {
     filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 5, 0xee, 0xee, 0xee, 0xaa);
     filledCircleRGBA(renderer, LABEL + x + 1, LABEL + y + 1, 2, 0xFF, 0x00, 0x00, 0xdd);
   }
+}
+
+void Game::drawLastMove() {
+  if (board->totalMoves <= 4) {
+    return;
+  }
+
+  SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xaa);
+  SDL_Rect rect;
+  rect.x = LABEL + (DISC * board->lastMove->col);
+  rect.y = LABEL + (DISC * board->lastMove->row);
+  rect.h = DISC + 1;
+  rect.w = DISC + 1;
+  SDL_RenderDrawRect(renderer, &rect);
 }
 
 void Game::drawGrid() {
@@ -214,6 +229,8 @@ void Game::handleClick(SDL_MouseButtonEvent *event) {
 
     std::thread t{aiThread, this};
     t.join();
+
+    render();
   }
 }
 
@@ -281,7 +298,7 @@ Move Game::getAiMove() {
   for (auto &move : moves) {
     auto childBoard = Board(*board);
     childBoard.addMove(move, LIGHT);
-    eval = minimax(&childBoard, 3, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), false);
+    eval = minimax(&childBoard, DEPTH, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), false);
     if (eval > maxEval) {
       maxEval = eval;
       bestMove = move;
@@ -332,15 +349,13 @@ int Game::minimax(Board *board, int depth, int alpha, int beta, bool maximizingP
 }
 
 int Game::colorScoreWeight(Board *board) {
-  int totalMoves = board->totalMoves();
-  if (totalMoves == 0) { return 1; }
-  return 540 / totalMoves;
+  if (board->totalMoves == 0) { return 1; }
+  return board->totalMoves * 500;
 }
 
 int Game::mobilityScoreWeight(Board *board) {
-  int totalMoves = board->totalMoves();
-  if (totalMoves == 0) { return 1; }
-  return totalMoves / 2;
+  if (board->totalMoves == 0) { return 1; }
+  return 100000 / board->totalMoves;
 }
 
 void Game::writeText(const char *text, const int x, const int y) {
