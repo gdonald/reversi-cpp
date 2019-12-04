@@ -1,6 +1,15 @@
 
 #include "Game.h"
 
+Game::~Game() {
+  TTF_CloseFont(font);
+  TTF_Quit();
+  bgTexture = nullptr;
+  renderer = nullptr;
+  window = nullptr;
+  SDL_Quit();
+}
+
 Game::Game(const char *title) {
   if (SDL_Init(SDL_INIT_EVERYTHING)) {
     printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -163,16 +172,16 @@ void Game::drawGrid() {
   SDL_RenderFillRect(renderer, &rect);
 
   // letters
-  for (int x = 0; x < 8; x++) {
-    char a[2] = {static_cast<char>(x + 97), '\0'};
-    writeText(reinterpret_cast<const char *>(&a), x * DISC + LABEL + RADIUS + 1, 2);
-  }
+//  for (int x = 0; x < 8; x++) {
+//    char a[2] = {static_cast<char>(x + 97), '\0'};
+//    writeText(reinterpret_cast<const char *>(&a), x * DISC + LABEL + RADIUS + 1, 2);
+//  }
 
   // numbers
-  for (int x = 0; x < 8; x++) {
-    char a[2] = {static_cast<char>(x + 49), '\0'};
-    writeText(reinterpret_cast<const char *>(&a), 8, x * DISC + LABEL + RADIUS - 7);
-  }
+//  for (int x = 0; x < 8; x++) {
+//    char a[2] = {static_cast<char>(x + 49), '\0'};
+//    writeText(reinterpret_cast<const char *>(&a), 8, x * DISC + LABEL + RADIUS - 7);
+//  }
 
   SDL_SetRenderDrawColor(renderer, 0x00, 0xaa, 0x00, 0xaa);
 
@@ -369,4 +378,7 @@ void Game::writeText(const char *text, const int x, const int y) {
   SDL_Rect rect = {.x = x, .y = y, .w = w, .h = h};
 
   SDL_RenderCopy(renderer, texture, nullptr, &rect);
+
+  texture = nullptr;
+  surface = nullptr;
 }
