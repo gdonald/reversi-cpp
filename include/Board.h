@@ -23,6 +23,8 @@ public:
 
   Board(Board const &board);
 
+  ~Board();
+
   int getMovesScore(int color);
 
   bool legalMove(int col, int row, int color);

@@ -1,6 +1,15 @@
 
 #include "Game.h"
 
+Game::~Game() {
+  TTF_CloseFont(font);
+  TTF_Quit();
+  SDL_DestroyTexture(bgTexture);
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+}
+
 Game::Game(const char *title) {
   if (SDL_Init(SDL_INIT_EVERYTHING)) {
     printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -369,4 +378,7 @@ void Game::writeText(const char *text, const int x, const int y) {
   SDL_Rect rect = {.x = x, .y = y, .w = w, .h = h};
 
   SDL_RenderCopy(renderer, texture, nullptr, &rect);
+
+  SDL_DestroyTexture(texture);
+  SDL_FreeSurface(surface);
 }

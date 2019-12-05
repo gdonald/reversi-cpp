@@ -12,4 +12,5 @@ int main(int argc, char *args[]) {
   }
 
   game->clean();
+  delete game;
 }
