@@ -74,6 +74,9 @@ public:
 
   static void aiThread(Game *game);
 
+  std::string letters[8] = {"a", "b", "c", "d", "e", "f", "g", "h"};
+  std::string numbers[8] = {"1", "2", "3", "4", "5", "6", "7", "8"};
+
 private:
   bool running = false;
   SDL_Window *window{};

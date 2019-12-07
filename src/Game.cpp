@@ -111,19 +111,14 @@ void Game::drawDiscs() {
   for (Sint16 r = 0; r < SIZE; r++) {
     for (Sint16 c = 0; c < SIZE; c++) {
       int color = board->getColor(c, r);
-      if (color != EMPTY) {
-        drawDisc(c, r, color);
-      }
+      if (color != EMPTY) { drawDisc(c, r, color); }
     }
   }
 }
 
 void Game::drawLegalMoves() {
   auto moves = board->legalMoves(turn);
-
-  for (auto &move: moves) {
-    drawLegalMove(move.col, move.row);
-  }
+  for (auto &move: moves) { drawLegalMove(move.col, move.row); }
 }
 
 void Game::drawLegalMove(Sint16 col, Sint16 row) {
@@ -140,9 +135,7 @@ void Game::drawLegalMove(Sint16 col, Sint16 row) {
 }
 
 void Game::drawLastMove() {
-  if (board->totalMoves <= 4) {
-    return;
-  }
+  if (board->totalMoves <= 4) { return; }
 
   SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xaa);
   SDL_Rect rect;
@@ -171,17 +164,11 @@ void Game::drawGrid() {
   rect.w = LABEL;
   SDL_RenderFillRect(renderer, &rect);
 
-  // letters
-  for (int x = 0; x < 8; x++) {
-    char a[2] = {static_cast<char>(x + 97), '\0'};
-    writeText(reinterpret_cast<const char *>(&a), x * DISC + LABEL + RADIUS + 1, 2);
-  }
+  for (int x = 0; x < 8; x++)
+    writeText(letters[x].c_str(), x * DISC + LABEL + RADIUS + 1, 2);
 
-  // numbers
-  for (int x = 0; x < 8; x++) {
-    char a[2] = {static_cast<char>(x + 49), '\0'};
-    writeText(reinterpret_cast<const char *>(&a), 8, x * DISC + LABEL + RADIUS - 7);
-  }
+  for (int x = 0; x < 8; x++)
+    writeText(numbers[x].c_str(), 8, x * DISC + LABEL + RADIUS - 7);
 
   SDL_SetRenderDrawColor(renderer, 0x00, 0xaa, 0x00, 0xaa);
 
@@ -224,9 +211,7 @@ void Game::newGame() {
 }
 
 void Game::handleClick(SDL_MouseButtonEvent *event) {
-  if (!isPlayerTurn() || event->button != SDL_BUTTON_LEFT) {
-    return;
-  }
+  if (!isPlayerTurn() || event->button != SDL_BUTTON_LEFT) { return; }
 
   int col = mouseX / DISC;
   int row = mouseY / DISC;
