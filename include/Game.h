@@ -115,7 +115,7 @@ private:
   int mouseY{};
 
   int turn{};
-  int currentMenu = MenuGameOver;
+  int currentMenu = MenuNone;
 
   SDL_Texture *btnTextures[BtnCount];
   SDL_Rect btnRects[BtnCount];
