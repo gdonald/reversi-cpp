@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 #include <SDL.h>
@@ -12,16 +13,33 @@
 #include "Board.h"
 #include "Move.h"
 
-#define DEPTH 3
+#define DEPTH 5
 
 #define SCREEN_W  626
 #define SCREEN_H 626
 #define BOARD_HW  600
 #define LABEL 24
-#define DISC      (BOARD_HW / SIZE)
-#define RADIUS    ((DISC / 2) - 2)
+#define DISC (BOARD_HW / SIZE)
+#define RADIUS ((DISC / 2) - 2)
+
+#define BTN_W 120
+#define BTN_H 40
+#define BTN_SPACE 20
 
 #define FONT "res/font/LiberationSerif-Bold.ttf"
+
+enum Buttons {
+  BtnOptions, BtnQuit, BtnYes, BtnNo,
+  BtnCount
+};
+
+enum ButtonStates {
+  BtnUp = 0, BtnDown = 40, BtnOff = 80
+};
+
+enum Menus {
+  MenuNone, MenuOptions, MenuGameOver
+};
 
 class Game {
 public:
@@ -48,6 +66,12 @@ public:
 
   void drawLastMove();
 
+  void drawOptionsMenu();
+
+  void drawGameOverMenu();
+
+  void drawMenu();
+
   void newGame();
 
   void handleClick(SDL_MouseButtonEvent *event);
@@ -57,6 +81,8 @@ public:
   void switchTurn();
 
   void aiTurn();
+
+  bool insideRect(SDL_Rect rect, int x, int y);
 
   static int evaluate(Board *board, int color);
 
@@ -70,7 +96,7 @@ public:
 
   Move getAiMove();
 
-  void writeText(const char *text, int x, int y);
+  void writeText(const char *text, int x, int y, TTF_Font *font);
 
   static void aiThread(Game *game);
 
@@ -89,8 +115,18 @@ private:
   int mouseY{};
 
   int turn{};
+  int currentMenu = MenuGameOver;
 
-  TTF_Font *font;
+  SDL_Texture *btnTextures[BtnCount];
+  SDL_Rect btnRects[BtnCount];
+
+  SDL_Surface *btnOptionsSurface;
+  SDL_Surface *btnQuitSurface;
+  SDL_Surface *btnYesSurface;
+  SDL_Surface *btnNoSurface;
+
+  TTF_Font *font15;
+  TTF_Font *font21;
 };
 
 #endif
