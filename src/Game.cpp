@@ -356,8 +356,8 @@ void Game::handleClick(SDL_MouseButtonEvent *event) {
 
   if (!isPlayerTurn() || event->button != SDL_BUTTON_LEFT) { return; }
 
-  int col = mouseX / DISC;
-  int row = mouseY / DISC;
+  int col = (mouseX - LABEL) / DISC;
+  int row = (mouseY - LABEL) / DISC;
 
   if (board->legalMove(col, row, DARK)) {
     board->flipPieces(col, row, DARK);
