@@ -195,11 +195,6 @@ std::vector<Move> Board::legalMoves(int color) {
       if (legalMove(c, r, color))
         v.emplace_back(c, r);
 
-  // TODO: make static
-  std::random_device rd;
-  std::mt19937 g(rd());
-  std::shuffle(v.begin(), v.end(), g);
-
   return v;
 }
 

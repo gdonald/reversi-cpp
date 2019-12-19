@@ -264,7 +264,7 @@ void Game::drawLegalMove(Sint16 col, Sint16 row) {
 void Game::drawLastMove() {
   if (board->totalMoves <= 4) { return; }
 
-  SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xff);
+  SDL_SetRenderDrawColor(renderer, 0xff, 0x00, 0x00, 0xff);
   SDL_Rect rect;
   rect.x = LABEL + (DISC * board->lastMove->col);
   rect.y = LABEL + (DISC * board->lastMove->row);
@@ -495,7 +495,7 @@ int Game::colorScoreWeight(Board *board) {
 
 int Game::mobilityScoreWeight(Board *board) {
   if (board->totalMoves == 0) { return 1; }
-  return 100000 / board->totalMoves;
+  return 1000 / board->totalMoves;
 }
 
 void Game::writeText(const char *text, const int x, const int y, TTF_Font *font) {
