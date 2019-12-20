@@ -413,18 +413,6 @@ void Game::aiTurn() {
   }
 }
 
-int Game::evaluate(Board *board, int color) {
-  int colorScore = board->getMovesScore(color);
-  int otherColorScore = board->getMovesScore(otherColor(color));
-  int finalColorScore = colorScore - otherColorScore;
-
-  int mobilityScore = board->legalMoves(color).size();
-  int otherMobilityScore = board->legalMoves(otherColor(color)).size();
-  int finalMobilityScore = mobilityScore - otherMobilityScore;
-
-  return (colorScoreWeight(board) * finalColorScore) + (mobilityScoreWeight(board) * finalMobilityScore);
-}
-
 int Game::otherColor(int color) {
   return color == DARK ? LIGHT : DARK;
 }
@@ -450,8 +438,10 @@ Move Game::getAiMove() {
 
 int Game::minimax(Board *board, int depth, int alpha, int beta, bool maximizingPlayer) {
 
-  if (depth == 0 || board->legalMoves(LIGHT).empty()) {
-    return evaluate(board, LIGHT);
+  int maxColor = maximizingPlayer ? DARK : LIGHT;
+
+  if (depth == 0 || board->legalMoves(maxColor).empty()) {
+    return evaluate(board, maxColor);
   }
 
   int eval;
@@ -488,6 +478,18 @@ int Game::minimax(Board *board, int depth, int alpha, int beta, bool maximizingP
   }
 }
 
+int Game::evaluate(Board *board, int color) {
+  int other = otherColor(color);
+
+  int colorScore = board->getMovesScore(color) - board->getMovesScore(other);
+
+  int mobilityScore = (int)board->legalMoves(other).size() - (int)board->legalMoves(color).size();
+
+  int score = (colorScoreWeight(board) * colorScore) + (mobilityScoreWeight(board) * mobilityScore);
+
+  return color == DARK ? -score : score;
+}
+
 int Game::colorScoreWeight(Board *board) {
   if (board->totalMoves == 0) { return 1; }
   return board->totalMoves * 500;
@@ -495,7 +497,7 @@ int Game::colorScoreWeight(Board *board) {
 
 int Game::mobilityScoreWeight(Board *board) {
   if (board->totalMoves == 0) { return 1; }
-  return 1000 / board->totalMoves;
+  return 100 / board->totalMoves;
 }
 
 void Game::writeText(const char *text, const int x, const int y, TTF_Font *font) {

@@ -14,7 +14,7 @@
 #include "Board.h"
 #include "Move.h"
 
-#define DEPTH 5
+#define DEPTH 7
 
 #define SCREEN_W  626
 #define SCREEN_H 626
