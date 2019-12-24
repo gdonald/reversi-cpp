@@ -483,7 +483,7 @@ int Game::evaluate(Board *board, int color) {
 
   int colorScore = board->getMovesScore(color) - board->getMovesScore(other);
 
-  int mobilityScore = (int)board->legalMoves(other).size() - (int)board->legalMoves(color).size();
+  int mobilityScore = (int)board->legalMoves(color).size() - (int)board->legalMoves(other).size();
 
   int score = (colorScoreWeight(board) * colorScore) + (mobilityScoreWeight(board) * mobilityScore);
 
@@ -492,12 +492,12 @@ int Game::evaluate(Board *board, int color) {
 
 int Game::colorScoreWeight(Board *board) {
   if (board->totalMoves == 0) { return 1; }
-  return board->totalMoves * 500;
+  return board->totalMoves * 100;
 }
 
 int Game::mobilityScoreWeight(Board *board) {
   if (board->totalMoves == 0) { return 1; }
-  return 100 / board->totalMoves;
+  return 10000 / board->totalMoves;
 }
 
 void Game::writeText(const char *text, const int x, const int y, TTF_Font *font) {
